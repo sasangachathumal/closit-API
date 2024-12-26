@@ -1,0 +1,12 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
+      <option name="ignoredIdentifiers">
+        <list>
+          <option value="tests.Analysis_of_the_Distribution_of_Total_Salse_Amount_of_Purchases_test.*" />
+        </list>
+      </option>
+    </inspection_tool>
+  </profile>
+</component>
