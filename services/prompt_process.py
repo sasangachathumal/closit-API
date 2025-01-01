@@ -110,3 +110,49 @@ def process_text_with_model(data):
 
     return {"input_text": user_input, "context": context}, 200
 
+
+def process_text_with_multi_data_model(data):
+    # Load model and vectorizer
+    model = joblib.load("models/multi_task_model.pkl")
+    vectorizer = joblib.load("models/multi_task_vectorizer.pkl")
+
+    user_input = data["prompt"]
+    X_input = vectorizer.transform([user_input])
+
+    # Predict the category
+    prediction = model.predict(X_input)[0]
+
+    return {"input_text": user_input, "predicted_label": prediction}, 200
+
+
+def predict_all(data):
+    user_input = data["prompt"]
+
+    # Load and predict with Dress Code model
+    dress_code_model = joblib.load("models/dress_code_model.pkl")
+    dress_code_vectorizer = joblib.load("models/dress_code_vectorizer.pkl")
+    dress_code_input = dress_code_vectorizer.transform([user_input])
+    dress_code_prediction = dress_code_model.predict(dress_code_input)[0]
+
+    # Load and predict with Weather model
+    weather_model = joblib.load("models/weather_model.pkl")
+    weather_vectorizer = joblib.load("models/weather_vectorizer.pkl")
+    weather_input = weather_vectorizer.transform([user_input])
+    weather_prediction = weather_model.predict(weather_input)[0]
+
+    # Load and predict with Occasion model
+    occasion_model = joblib.load("models/occasion_model.pkl")
+    occasion_vectorizer = joblib.load("models/occasion_vectorizer.pkl")
+    occasion_input = occasion_vectorizer.transform([user_input])
+    occasion_prediction = occasion_model.predict(occasion_input)[0]
+
+    return {
+        "input_text": user_input,
+        "predictions": {
+            "dress_code": dress_code_prediction,
+            "weather": weather_prediction,
+            "occasion": occasion_prediction
+        }
+    }
+
+
