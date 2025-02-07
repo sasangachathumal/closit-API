@@ -1,26 +1,41 @@
-import mysql.connector
-from mysql.connector import Error
+import sqlite3
 
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
 
-db_config = {
-    "host": os.getenv("DB_HOST"),
-    "user": os.getenv("DB_USER"),
-    "password": os.getenv("DB_PASSWORD"),
-    "database": os.getenv("DB_NAME")
-}
-
 
 def create_db_connection():
-    """Create and return a MySQL database connection."""
+    # Create and return a database connection and cursor.
     try:
-        connection = mysql.connector.connect(**db_config)
-        if connection.is_connected():
-            print("Connected to MySQL Database")
+        connection = sqlite3.connect(os.getenv("DB_FILE_NAME"))
+        if connection.cursor():
+            print("Connected to SQLite Database")
         return connection
-    except Error as e:
+    except sqlite3.Error as e:
         print(f"Database connection error: {e}")
         return None
+
+
+def create_db_tables():
+    with create_db_connection() as connection:
+        cursor = connection.cursor()
+        try:
+            create_customers_table = '''
+                CREATE TABLE IF NOT EXISTS Customers (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL UNIQUE,
+                    balance REAL NOT NULL
+                );
+                '''
+            cursor.execute("BEGIN;")
+            cursor.execute(create_customers_table)
+            connection.commit()
+            print(f"Datatable created")
+
+        except sqlite3.Error as e:
+            connection.rollback()
+            print(f"Database connection error: {e}")
+            return None
+

@@ -1,4 +1,8 @@
-from db_connection import create_db_connection
+from db_connection import create_db_connection, create_db_tables
+
+
+def create_tables():
+    create_db_tables()
 
 
 def get_items():

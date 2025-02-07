@@ -1,10 +1,16 @@
 from flask import Flask, jsonify, request
-from services.items import get_items
-from services.items import add_item
+from services.items import get_items, add_item, create_tables
 from services.prompt_process import (process_text, process_text_with_model,
                                      process_text_with_multi_data_model, predict_all)
+from services.color_process import get_matching_colors
 
 app = Flask(__name__)
+
+
+@app.route('/create', methods=['GET'])
+def create_data_tables():
+    result, status_code = create_tables()
+    return jsonify(result), status_code
 
 
 # Route: Fetch all items
@@ -48,6 +54,14 @@ def predict_with_all_models():
     data = request.get_json()
     result = predict_all(data)
     return jsonify(result)
+
+
+@app.route('/getMatchingColors', methods=['POST'])
+def get_color_matching():
+    data = request.get_json()
+    result = get_matching_colors(data)
+    return jsonify(result)
+
 
 # Run the app
 if __name__ == '__main__':
