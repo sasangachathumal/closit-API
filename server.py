@@ -20,6 +20,8 @@ from marshmallow import Schema, fields, ValidationError, validate
 import uuid
 from datetime import timedelta
 
+from services.predict_attributes import get_attributes
+
 # Initialize Flask app
 app = Flask(__name__)
 # enable logger
@@ -90,7 +92,21 @@ def exception_handlers(e):
     app.logger.error(f"Unexpected error: {str(e)}")
     return jsonify({'error': 'An unexpected error occurred'}), 500
 # Routes
-@app.route("/api/user", methods=["POST"])
+@app.route("/api/register/verify", methods=["POST"])
+def register_new_user():
+    data = request.json
+    # Validate request body against schema data types
+    if data['email'] == "":
+        return jsonify({'error': 'email not provided'}), 400
+
+    # Check if username or email already exists
+    if Users.query.filter_by(email=data['email']).first():
+        return jsonify({'error': 'Already exists'}), 400
+    else:
+        return jsonify({'message': 'No user found'}), 200
+
+
+@app.route("/api/register", methods=["POST"])
 def register_new_user():
     data = request.json
     # get validation schema
@@ -272,6 +288,9 @@ def save_user_clothing_items():
                 if (clothingItem.category == data['category']) and (clothingItem.colorCode == data['colorCode']) and (clothingItem.material == data['material']):
                     return jsonify({'error': 'Already exists clothing item'}), 400
 
+        # get clothing attributes
+        clothing_attributes = get_attributes(data['category'], data['colorCode'], data['material'])
+
         # Create a new clothing item
         new_clothing_item = ClothingItem(
             userId=user.id,
@@ -285,7 +304,7 @@ def save_user_clothing_items():
 
         if new_clothing_item.id:
             # create clothing item dress codes
-            for dressCode in data['dressCodes']:
+            for dressCode in clothing_attributes['Dress_Codes']:
                 db.session.add(
                     ClothingItemDressCode(
                         clothingItemId=new_clothing_item.id,
@@ -294,7 +313,7 @@ def save_user_clothing_items():
                 )
                 db.session.flush()
             # create clothing item occasions
-            for occasion in data['occasions']:
+            for occasion in clothing_attributes['Occasions']:
                 db.session.add(
                     ClothingItemOccasion(
                         clothingItemId=new_clothing_item.id,
@@ -303,7 +322,7 @@ def save_user_clothing_items():
                 )
                 db.session.flush()
             # create clothing item weather
-            for weather in data['weathers']:
+            for weather in clothing_attributes['Weather_Conditions']:
                 db.session.add(
                     ClothingItemWeather(
                         clothingItemId=new_clothing_item.id,
@@ -318,9 +337,7 @@ def save_user_clothing_items():
             'category': new_clothing_item.category,
             'colorCode': new_clothing_item.colorCode,
             'material': new_clothing_item.material,
-            'dressCodes': data['dressCodes'],
-            'occasions': data['occasions'],
-            'weather': data['weathers']
+            'clothing_attributes': clothing_attributes
         }}), 201
     except SQLAlchemyError as e:
         return sql_alchemy_error_handlers(e)

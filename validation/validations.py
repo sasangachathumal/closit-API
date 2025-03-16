@@ -21,6 +21,3 @@ class ClothingItemSchema(Schema):
     category = fields.String(required=True)
     colorCode = fields.String(required=True)
     material = fields.String(required=True)
-    dressCodes = fields.List(fields.String(validate=validate.Length(min=1)), required=True)
-    occasions = fields.List(fields.String(validate=validate.Length(min=1)), required=True)
-    weathers = fields.List(fields.String(validate=validate.Length(min=1)), required=True)

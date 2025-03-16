@@ -2,9 +2,9 @@ from flask import Flask, jsonify, request
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 
 # from services.items import get_items, add_item, create_tables
-# from services.prompt_process import (process_text, process_text_with_model,
-#                                      process_text_with_multi_data_model, predict_all)
-# from services.color_process import get_matching_colors
+from services.prompt_process import (process_text, process_text_with_model,
+                                     process_text_with_multi_data_model, predict_all)
+from services.color_process import get_matching_colors
 
 # from routes.user_routes import user_routes_bp
 
@@ -17,39 +17,39 @@ jwt = JWTManager(app)
 # app.register_blueprint(user_routes_bp)
 
 
-# @app.route('/process-prompt', methods=['POST'])
-# def process_prompt():
-#     data = request.json
-#     result, status_code = process_text(data)
-#     return jsonify(result), status_code
+@app.route('/process-prompt', methods=['POST'])
+def process_prompt():
+    data = request.json
+    result, status_code = process_text(data)
+    return jsonify(result), status_code
 
 
-# @app.route('/process-prompt-model', methods=['POST'])
-# def process_prompt_model():
-#     data = request.json
-#     result, status_code = process_text_with_model(data)
-#     return jsonify(result), status_code
+@app.route('/process-prompt-model', methods=['POST'])
+def process_prompt_model():
+    data = request.json
+    result, status_code = process_text_with_model(data)
+    return jsonify(result), status_code
 
 
-# @app.route('/process-prompt-multi-data-model', methods=['POST'])
-# def process_prompt_multi_data_model():
-#     data = request.json
-#     result, status_code = process_text_with_multi_data_model(data)
-#     return jsonify(result), status_code
+@app.route('/process-prompt-multi-data-model', methods=['POST'])
+def process_prompt_multi_data_model():
+    data = request.json
+    result, status_code = process_text_with_multi_data_model(data)
+    return jsonify(result), status_code
 
 
-# @app.route('/predictAll', methods=['POST'])
-# def predict_with_all_models():
-#     data = request.get_json()
-#     result = predict_all(data)
-#     return jsonify(result)
+@app.route('/predictAll', methods=['POST'])
+def predict_with_all_models():
+    data = request.get_json()
+    result = predict_all(data)
+    return jsonify(result)
 
 
-# @app.route('/getMatchingColors', methods=['POST'])
-# def get_color_matching():
-#     data = request.get_json()
-#     result = get_matching_colors(data)
-#     return jsonify(result)
+@app.route('/getMatchingColors', methods=['POST'])
+def get_color_matching():
+    data = request.get_json()
+    result = get_matching_colors(data)
+    return jsonify(result)
 
 
 # Run the app
