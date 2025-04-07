@@ -1,0 +1,18 @@
+Material,Weather_Condition
+Cotton,"['Hot', 'Mild']"
+Linen,"['Hot', 'Mild']"
+Polyester,"['Mild', 'Cold']"
+Denim,"['Mild', 'Cold']"
+Wool,['Cold']
+Fleece,['Cold']
+Leather,['Any']
+Synthetic,['Any']
+Silk,"['Hot', 'Mild']"
+Rayon,"['Hot', 'Mild']"
+Nylon,"['Mild', 'Cold']"
+Hemp,"['Hot', 'Mild']"
+Bamboo,"['Hot', 'Mild']"
+Cashmere,['Cold']
+Flannel,['Cold']
+Corduroy,"['Mild', 'Cold']"
+Canvas,['Any']

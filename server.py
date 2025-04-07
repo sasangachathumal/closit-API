@@ -93,7 +93,7 @@ def exception_handlers(e):
     return jsonify({'error': 'An unexpected error occurred'}), 500
 # Routes
 @app.route("/api/register/verify", methods=["POST"])
-def register_new_user():
+def register_user_verify():
     data = request.json
     # Validate request body against schema data types
     if data['email'] == "":

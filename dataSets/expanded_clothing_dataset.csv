@@ -1,0 +1,11 @@
+Clothing_Item,Dress_Codes,Occasions
+Long Sleeve Shirt,"['Formal', 'Business Casual', 'Smart Casual']","['Office', 'Meetings', 'Dinner']"
+Short Sleeve Shirt,"['Business Casual', 'Smart Casual', 'Casual']","['Office', 'Casual Outing', 'Lunch']"
+Long Sleeve T-Shirt,"['Casual', 'Sporty', 'Streetwear']","['Casual Outing', 'Sports Events', 'Travel']"
+Short Sleeve T-Shirt,"['Casual', 'Sporty', 'Beachwear']","['Beach', 'Gym', 'Casual Outing']"
+Jean,"['Casual', 'Smart Casual']","['Casual Outing', 'Office', 'Travel']"
+Trouser,"['Formal', 'Business Casual']","['Office', 'Formal Events', 'Meetings']"
+Hoodie,"['Casual', 'Sporty', 'Streetwear']","['Casual Outing', 'Sports Events', 'Travel']"
+Short,"['Casual', 'Sporty', 'Beachwear']","['Beach', 'Gym', 'Casual Outing']"
+Leather Shoes,"['Formal', 'Business Casual']","['Office', 'Formal Events', 'Meetings']"
+Casual Shoes,"['Casual', 'Smart Casual']","['Casual Outing', 'Travel', 'Everyday Wear']"

@@ -1,6 +1,8 @@
 import pandas as pd
 import ast
+import os
 
+this_dir = os.path.dirname(__file__)
 def clean_and_eval(column_value):
     """
     Cleans and evaluates a string representation of a list.
@@ -19,8 +21,8 @@ def get_attributes(category, color_code, material):
     Predict dress codes, occasions, and weather conditions based on input clothing category, material, and color.
     """
     # Load the dataset
-    clothing_item_data_frame = pd.read_csv("../dataSets/expanded_clothing_dataset.csv")
-    weather_condition_data_frame = pd.read_csv("../dataSets/expanded_weather_dataset.csv")
+    clothing_item_data_frame = pd.read_csv(os.path.join(this_dir, "../dataSets/expanded_clothing_dataset.csv"))
+    weather_condition_data_frame = pd.read_csv(os.path.join(this_dir, "../dataSets/expanded_weather_dataset.csv"))
 
     # Get dress codes and occasions and weather conditions from dataset
     clothing_row = clothing_item_data_frame[clothing_item_data_frame["Clothing_Item"].str.lower() == category.lower()]
@@ -52,6 +54,6 @@ def get_attributes(category, color_code, material):
 
 
 # Example usage
-print(get_attributes("Long Sleeve Shirt", "#ffffff", "Cotton"))
-print(get_attributes("Casual Shoes", "#000000", "Leather"))
-print(get_attributes("Hoodie", "#123abc", "Fleece"))
+# print(get_attributes("Long Sleeve Shirt", "#ffffff", "Cotton"))
+# print(get_attributes("Casual Shoes", "#000000", "Leather"))
+# print(get_attributes("Hoodie", "#123abc", "Fleece"))

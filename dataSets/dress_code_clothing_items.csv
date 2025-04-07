@@ -1,0 +1,29 @@
+dress_code,clothing_item
+Formal,Long Sleeve Shirt
+Formal,Trouser
+Formal,Leather Shoes
+Business Casual,Long Sleeve Shirt
+Business Casual,Short Sleeve Shirt
+Business Casual,Trouser
+Business Casual,Leather Shoes
+Business Casual,Casual Shoes
+Smart Casual,Short Sleeve Shirt
+Smart Casual,Jean
+Smart Casual,Trouser
+Smart Casual,Casual Shoes
+Casual,Short Sleeve T-Shirt
+Casual,Long Sleeve T-Shirt
+Casual,Jean
+Casual,Short
+Casual,Hoodie
+Casual,Casual Shoes
+Party,Short Sleeve T-Shirt
+Party,Long Sleeve T-Shirt
+Party,Jean
+Party,Hoodie
+Party,Casual Shoes
+Workout,Short Sleeve T-Shirt
+Workout,Long Sleeve T-Shirt
+Workout,Short
+Workout,Hoodie
+Workout,Casual Shoes
