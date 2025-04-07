@@ -4,6 +4,9 @@ import pandas as pd
 import csv
 import re
 from spacy.lang.en.stop_words import STOP_WORDS
+import os
+
+this_dir = os.path.dirname(__file__)
 
 # Load spaCy model
 nlp = spacy.load("en_core_web_lg")
@@ -24,7 +27,7 @@ COLOR_LIST = [
 # Load occasion keywords from CSV
 def load_occasion_keywords_from_csv():
     occasion_keywords = {}
-    with open('../dataSets/occasion_keywords.csv', 'r', encoding='utf-8') as file:
+    with open(os.path.join(this_dir, '../dataSets/occasion_keywords.csv'), 'r', encoding='utf-8') as file:
         reader = csv.DictReader(file)
         for row in reader:
             keyword = row['keyword'].strip().lower()
@@ -98,7 +101,7 @@ def extract_info(prompt):
     }
 
 def load_dress_code_rules():
-    df = pd.read_csv('../dataSets/dress_code_rules.csv')
+    df = pd.read_csv(os.path.join(this_dir, '../dataSets/dress_code_rules.csv'))
     return dict(zip(df['occasion'], df['dress_code']))
 
 
@@ -118,7 +121,7 @@ def predict_dress_code(info):
     return list(predicted_dress_codes)
 
 def load_clothing_items():
-    df = pd.read_csv('../dataSets/dress_code_clothing_items.csv')
+    df = pd.read_csv(os.path.join(this_dir, '../dataSets/dress_code_clothing_items.csv'))
     return df
 
 def predict_clothing_items(dress_codes):
@@ -126,12 +129,12 @@ def predict_clothing_items(dress_codes):
     matched_items = df[df['dress_code'].isin(dress_codes)]['clothing_item'].unique()
     return list(matched_items)
 
-text = "Next week is our project release and I have to do a presentation. What should I wear?"
-info = extract_info(text)
-print(info)
-
-dress_codes = predict_dress_code(info)
-print("Predicted Dress Code(s):", dress_codes)
-
-clothing_items = predict_clothing_items(dress_codes)
-print("Recommended Clothing Items:", clothing_items)
+def predict(prompt):
+    extracted_info = extract_info(prompt)
+    predicted_dress_codes = predict_dress_code(extracted_info)
+    predicted_clothing_items = predict_clothing_items(predicted_dress_codes)
+    return {
+        "extracted_info": extracted_info,
+        "predicted_dress_codes": predicted_dress_codes,
+        "predicted_clothing_items": predicted_clothing_items
+    }

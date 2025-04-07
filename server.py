@@ -21,6 +21,7 @@ import uuid
 from datetime import timedelta
 
 from services.predict_attributes import get_attributes
+from services.predict_clothing_items import predict
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -430,6 +431,29 @@ def get_clothing_items_of_login_user():
                 }
             )
         return jsonify({'message': 'Clothing items found', 'data': clothing_items_array}), 200
+    except SQLAlchemyError as e:
+        return sql_alchemy_error_handlers(e)
+    except Exception as e:
+        return exception_handlers(e)
+
+@app.route("/api/recommendation", methods=["POST"])
+@jwt_required()
+def get_clothing_item_recommendations():
+    data = request.json
+    current_user = get_jwt_identity()
+    # Validate JWT data
+    if not current_user:
+        return jsonify({"error": "Invalid token data"}), 400
+
+    try:
+        # fetch the user
+        user = Users.query.filter_by(email=current_user).first()
+        if not user:
+            return jsonify({'error': 'Invalid token data'}), 400
+
+        clothing_recommendations = predict(data["prompt"])
+        print(clothing_recommendations)
+        return jsonify({'message': 'Clothing items found', 'data': clothing_recommendations}), 200
     except SQLAlchemyError as e:
         return sql_alchemy_error_handlers(e)
     except Exception as e:
