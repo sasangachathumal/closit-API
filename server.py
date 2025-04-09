@@ -8,6 +8,8 @@ from sqlalchemy import and_, PrimaryKeyConstraint
 from sqlalchemy.testing.suite.test_reflection import users
 from werkzeug.security import generate_password_hash, check_password_hash
 import os
+import csv
+from itertools import product
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import joinedload
 import logging
@@ -15,7 +17,8 @@ from flask import jsonify
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, decode_token
-from validation.validations import NewUserSchema, UserLoginSchema, ForgetPasswordSchema, ResetPasswordSchema, ClothingItemSchema
+from validation.validations import NewUserSchema, UserLoginSchema, ForgetPasswordSchema, ResetPasswordSchema, \
+    ClothingItemSchema
 from marshmallow import Schema, fields, ValidationError, validate
 import uuid
 from datetime import timedelta
@@ -40,7 +43,7 @@ app.config["JWT_SECRET_KEY"] = "closit_SECRET"
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(days=7)
 app.config["JWT_REFRESH_TOKEN_EXPIRES"] = timedelta(days=17)
 jwt = JWTManager(app)
-
+this_dir = os.path.dirname(__file__)
 
 # Define Models
 class Users(db.Model):
@@ -92,6 +95,118 @@ def sql_alchemy_error_handlers(e):
 def exception_handlers(e):
     app.logger.error(f"Unexpected error: {str(e)}")
     return jsonify({'error': 'An unexpected error occurred'}), 500
+
+def get_user_wardrobe(user_id):
+    clothing_items_array = []
+    try:
+        # fetch the clothing items of user
+        clothing_items = ClothingItem.query.filter_by(userId=user_id).all()
+        if len(clothing_items) <= 0:
+            return clothing_items_array
+
+        for clothingItem in clothing_items:
+            # fetch the clothing item dress codes
+            clothing_item_dress_codes = ClothingItemDressCode.query.filter_by(clothingItemId=clothingItem.id).all()
+            # fetch the clothing item occasions
+            clothing_item_occasions = ClothingItemOccasion.query.filter_by(clothingItemId=clothingItem.id).all()
+            # fetch the clothing item weathers
+            clothing_item_weathers = ClothingItemWeather.query.filter_by(clothingItemId=clothingItem.id).all()
+            # create dress code array
+            clothing_item_dress_codes_array = [dc.dressCode for dc in clothing_item_dress_codes]
+            # create occasion array
+            clothing_item_occasions_array = [oc.occasion for oc in clothing_item_occasions]
+            # create weather array
+            clothing_item_weather_array = [w.weather for w in clothing_item_weathers]
+            clothing_items_array.append(
+                {
+                    'id': clothingItem.id,
+                    'userId': clothingItem.userId,
+                    'category': clothingItem.category,
+                    'colorCode': clothingItem.colorCode,
+                    'material': clothingItem.material,
+                    'dressCodes': clothing_item_dress_codes_array,
+                    'occasions': clothing_item_occasions_array,
+                    'weather': clothing_item_weather_array
+                }
+            )
+
+        return clothing_items_array
+    except SQLAlchemyError as e:
+        return sql_alchemy_error_handlers(e)
+    except Exception as e:
+        return exception_handlers(e)
+
+def match_recommendations_to_wardrobe(wardrobe, predicted_items, filters):
+    matched = []
+    missing = []
+
+    for item in predicted_items:
+        found = False
+        for wardrobe_item in wardrobe:
+            if wardrobe_item["category"].lower() != item.lower():
+                continue
+
+            # Match dress code
+            if filters.get("dress_codes"):
+                if not set(wardrobe_item["dressCodes"]) & set(filters["dress_codes"]):
+                    continue
+
+            # Match occasion
+            if filters.get("occasions"):
+                if not set(wardrobe_item["occasions"]) & set(filters["occasions"]):
+                    continue
+
+            # Optional: Match weather
+            if filters.get("weather"):
+                if not set(wardrobe_item["weather"]) & set(filters["weather"]):
+                    continue
+
+            # Optional: color match
+            if filters.get("colors"):
+                if wardrobe_item["colorCode"] not in filters["colors"]:
+                    continue
+
+            # Optional: material match
+            if filters.get("materials"):
+                if wardrobe_item["material"] not in filters["materials"]:
+                    continue
+
+            matched.append(wardrobe_item)
+            found = True
+            break
+
+        if not found:
+            missing.append(item)
+
+    return matched, missing
+
+def update_dress_code_rules(new_data):
+    # Read existing combinations from the CSV
+    existing_combinations = set()
+    if os.path.exists(os.path.join(this_dir, './dataSets/dress_code_rules.csv')):
+        with open(os.path.join(this_dir, './dataSets/dress_code_rules.csv'), mode='r', newline='') as file:
+            reader = csv.DictReader(file)
+            for row in reader:
+                existing_combinations.add((row['occasion'], row['dress_code']))
+
+    # Generate all combinations from DB data
+    new_combinations = set(product(new_data['occasions'], new_data['dressCodes']))
+    # Identify missing combinations
+    missing_combinations = new_combinations - existing_combinations
+    # If there missing combinations append to CSV
+    if missing_combinations:
+        print("Adding new combinations:")
+        with open(os.path.join(this_dir, './dataSets/dress_code_rules.csv'), mode='a', newline='') as file:
+            writer = csv.DictWriter(file, fieldnames=['occasion', 'dress_code'])
+            # If file was just created, write header
+            if os.stat(os.path.join(this_dir, './dataSets/dress_code_rules.csv')).st_size == 0:
+                writer.writeheader()
+            for occasion, dress_code in missing_combinations:
+                print(occasion)
+                print(dress_code)
+                # Save to CSV
+                writer.writerow({'occasion': occasion, 'dress_code': dress_code})
+
 # Routes
 @app.route("/api/register/verify", methods=["POST"])
 def register_user_verify():
@@ -145,6 +260,7 @@ def register_new_user():
     except Exception as e:
         exception_handlers(e)
 
+
 @app.route("/api/login", methods=["POST"])
 def user_login():
     data = request.json
@@ -176,6 +292,7 @@ def user_login():
     except Exception as e:
         exception_handlers(e)
 
+
 @app.route("/api/forget-password", methods=["POST"])
 def send_password_rest_email():
     data = request.json
@@ -206,6 +323,7 @@ def send_password_rest_email():
     except Exception as e:
         exception_handlers(e)
 
+
 @app.route("/api/reset-password", methods=["POST"])
 def rest_user_password():
     data = request.json
@@ -235,6 +353,7 @@ def rest_user_password():
     except Exception as e:
         exception_handlers(e)
 
+
 @app.route("/api/me", methods=["GET"])
 @jwt_required()
 def get_user_info():
@@ -257,6 +376,7 @@ def get_user_info():
         sql_alchemy_error_handlers(e)
     except Exception as e:
         exception_handlers(e)
+
 
 @app.route("/api/clothing-item", methods=["POST"])
 @jwt_required()
@@ -286,7 +406,8 @@ def save_user_clothing_items():
         clothing_items = ClothingItem.query.filter_by(userId=user.id).all()
         if len(clothing_items) > 0:
             for clothingItem in clothing_items:
-                if (clothingItem.category == data['category']) and (clothingItem.colorCode == data['colorCode']) and (clothingItem.material == data['material']):
+                if (clothingItem.category == data['category']) and (clothingItem.colorCode == data['colorCode']) and (
+                        clothingItem.material == data['material']):
                     return jsonify({'error': 'Already exists clothing item'}), 400
 
         # get clothing attributes
@@ -333,6 +454,14 @@ def save_user_clothing_items():
                 db.session.flush()
         # Commit changes to the database
         db.session.commit()
+
+        data_to_csv = {
+            'dressCodes': clothing_attributes['Dress_Codes'],
+            'occasions': clothing_attributes['Occasions']
+        }
+
+        update_dress_code_rules(data_to_csv)
+
         return jsonify({'message': 'Clothing item save successfully', 'data': {
             'id': new_clothing_item.id,
             'category': new_clothing_item.category,
@@ -344,6 +473,7 @@ def save_user_clothing_items():
         return sql_alchemy_error_handlers(e)
     except Exception as e:
         return exception_handlers(e)
+
 
 @app.route("/api/clothing-item/<item>", methods=["GET"])
 @jwt_required()
@@ -386,6 +516,7 @@ def get_clothing_item_by_id(item):
     except Exception as e:
         return exception_handlers(e)
 
+
 @app.route("/api/clothing-item/user", methods=["GET"])
 @jwt_required()
 def get_clothing_items_of_login_user():
@@ -399,42 +530,15 @@ def get_clothing_items_of_login_user():
         user = Users.query.filter_by(email=current_user).first()
         if not user:
             return jsonify({'error': 'Invalid token data'}), 400
-        # fetch the clothing items of user
-        clothing_items = ClothingItem.query.filter_by(userId=user.id).all()
-        if len(clothing_items) <= 0:
-            return jsonify({'message': 'No clothing item saved yet', 'data': []}), 200
 
-        clothing_items_array = []
-        for clothingItem in clothing_items:
-            # fetch the clothing item dress codes
-            clothing_item_dress_codes = ClothingItemDressCode.query.filter_by(clothingItemId=clothingItem.id).all()
-            # fetch the clothing item occasions
-            clothing_item_occasions = ClothingItemOccasion.query.filter_by(clothingItemId=clothingItem.id).all()
-            # fetch the clothing item weathers
-            clothing_item_weathers = ClothingItemWeather.query.filter_by(clothingItemId=clothingItem.id).all()
-            # create dress code array
-            clothing_item_dress_codes_array = [dc.dressCode for dc in clothing_item_dress_codes]
-            # create occasion array
-            clothing_item_occasions_array = [oc.occasion for oc in clothing_item_occasions]
-            # create weather array
-            clothing_item_weather_array = [w.weather for w in clothing_item_weathers]
-            clothing_items_array.append(
-                {
-                    'id': clothingItem.id,
-                    'userId': clothingItem.userId,
-                    'category': clothingItem.category,
-                    'colorCode': clothingItem.colorCode,
-                    'material': clothingItem.material,
-                    'dressCodes': clothing_item_dress_codes_array,
-                    'occasions': clothing_item_occasions_array,
-                    'weather': clothing_item_weather_array
-                }
-            )
+        clothing_items_array = get_user_wardrobe(user.id)
+
         return jsonify({'message': 'Clothing items found', 'data': clothing_items_array}), 200
     except SQLAlchemyError as e:
         return sql_alchemy_error_handlers(e)
     except Exception as e:
         return exception_handlers(e)
+
 
 @app.route("/api/recommendation", methods=["POST"])
 @jwt_required()
@@ -452,12 +556,31 @@ def get_clothing_item_recommendations():
             return jsonify({'error': 'Invalid token data'}), 400
 
         clothing_recommendations = predict(data["prompt"])
+
+        user_clothing_items_array = get_user_wardrobe(user.id)
+
+        filters = {
+            'dress_codes': clothing_recommendations["predicted_dress_codes"],
+            'occasions': clothing_recommendations["extracted_info"]["occasions"],
+            'weather': [],
+            'colors': clothing_recommendations["extracted_info"]["colors"]
+        }
+
+        matched, missing = match_recommendations_to_wardrobe(user_clothing_items_array,
+                                                             clothing_recommendations["predicted_clothing_items"],
+                                                             filters)
+
         print(clothing_recommendations)
-        return jsonify({'message': 'Clothing items found', 'data': clothing_recommendations}), 200
+        print(user_clothing_items_array)
+        return jsonify({'message': 'Clothing items found', 'data': {
+            "matched": matched,
+            "missing": missing
+        }}), 200
     except SQLAlchemyError as e:
         return sql_alchemy_error_handlers(e)
     except Exception as e:
         return exception_handlers(e)
+
 
 # Run the app
 if __name__ == '__main__':
