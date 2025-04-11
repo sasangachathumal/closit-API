@@ -51,9 +51,3 @@ def get_attributes(category, color_code, material):
         "Occasions": occasions,
         "Weather_Conditions": weather_conditions
     }
-
-
-# Example usage
-# print(get_attributes("Long Sleeve Shirt", "#ffffff", "Cotton"))
-# print(get_attributes("Casual Shoes", "#000000", "Leather"))
-# print(get_attributes("Hoodie", "#123abc", "Fleece"))
