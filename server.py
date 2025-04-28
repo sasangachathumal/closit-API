@@ -24,6 +24,9 @@ import validation.validations as validators
 import controllers.auth as auth_controller
 import controllers.clothing_item as clothing_controller
 
+# Import prompt processes
+from services.prompt_process import predict_intent, get_response, fallback
+
 # Initialize Flask app
 app = Flask(__name__)
 
@@ -342,31 +345,44 @@ def get_clothing_item_recommendations():
         user = auth_controller.check_user_exists_by_email(current_user)
         if not user:
             return jsonify({'error': 'Invalid token data'}), 400
-        # get clothing recommendation based on prompt
-        clothing_recommendations = predict(data["prompt"])
-        # get user wardrobe items
-        user_clothing_items_array = clothing_controller.get_user_wardrobe(user.id)
-        # create filters for recommendation mapping
-        filters = {
-            'dress_codes': clothing_recommendations["predicted_dress_codes"],
-            'occasions': clothing_recommendations["extracted_info"]["occasions"],
-            'weather': [],
-            'colors': clothing_recommendations["extracted_info"]["colors"]
-        }
-        # match recommendations to wardrobe items
-        matched, missing = clothing_controller.match_recommendations_to_wardrobe(user_clothing_items_array,
-                                                                                 clothing_recommendations[
-                                                                                     "predicted_clothing_items"],
-                                                                                 filters)
-        # format missing items to objects
-        missing_obj = util_service.create_missing_clothing_items_obj(missing, filters)
-        # get color recommendations for missing items
-        missing_with_color = apply_recommended_colors(missing_obj)
+        # get user prompt
+        prompt = data.get("prompt", "")
 
-        return jsonify({'message': 'Clothing items found', 'data': {
-            "matched": matched,
-            "missing": missing_with_color
-        }}), 200
+        # Predict tag first
+        intent_tag = predict_intent(prompt)
+
+        if intent_tag != "unknown":
+            # Intent matched, return the intent response
+            response = get_response(intent_tag)
+            return jsonify({'message': response}), 200
+        else:
+            # get clothing recommendation based on prompt
+            clothing_recommendations = predict(prompt)
+
+            if not clothing_recommendations["predicted_dress_codes"] and not clothing_recommendations["predicted_clothing_items"]:
+                # No clothing prediction either, now return fallback
+                response = fallback()
+                return jsonify({'message': response}), 200
+            else:
+                # get user wardrobe items
+                user_clothing_items_array = clothing_controller.get_user_wardrobe(user.id)
+                # create filters for recommendation mapping
+                filters = {
+                    'dress_codes': clothing_recommendations["predicted_dress_codes"],
+                    'occasions': clothing_recommendations["extracted_info"]["occasions"],
+                    'weather': [],
+                    'colors': clothing_recommendations["extracted_info"]["colors"]
+                }
+                # match recommendations to wardrobe items
+                matched, missing = clothing_controller.match_recommendations_to_wardrobe(user_clothing_items_array, clothing_recommendations["predicted_clothing_items"], filters)
+                # format missing items to objects
+                missing_obj = util_service.create_missing_clothing_items_obj(missing, filters)
+                # get color recommendations for missing items
+                missing_with_color = apply_recommended_colors(missing_obj)
+                return jsonify({'message': 'Clothing items found', 'data': {
+                    "matched": matched,
+                    "missing": missing_with_color
+                }}), 200
     except SQLAlchemyError as e:
         return util_service.sql_alchemy_error_handlers(e)
     except Exception as e:

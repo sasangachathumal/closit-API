@@ -115,9 +115,6 @@ def predict_dress_code(info):
         if occasion in rules:
             predicted_dress_codes.add(rules[occasion])
 
-    if not predicted_dress_codes:
-        predicted_dress_codes.add("Casual")  # Default fallback
-
     return list(predicted_dress_codes)
 
 def load_clothing_items():
