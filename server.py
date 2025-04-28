@@ -379,7 +379,7 @@ def get_clothing_item_recommendations():
                 missing_obj = util_service.create_missing_clothing_items_obj(missing, filters)
                 # get color recommendations for missing items
                 missing_with_color = apply_recommended_colors(missing_obj)
-                return jsonify({'message': 'Clothing items found', 'data': {
+                return jsonify({'data': {
                     "matched": matched,
                     "missing": missing_with_color
                 }}), 200
